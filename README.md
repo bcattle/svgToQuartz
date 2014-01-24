@@ -31,6 +31,15 @@ SVG commands that are supported
 --------------
 This script specifically parses the contents of the `<path d="">` attribute. Other features (colors, simple shapes) will be needed on an as-needed basis. Feel free to propose any improvements. 
 
+Commands that work so far:
+* `m`: move to point, relative coordinates
+* `c`: add cubic bezier curve, relative coordinates
+* `l`: add line, relative coordinates
+* `z`: close path
+
+These commands appear to cover most common output from Inkscape.
+
+
 References 
 --------------
 
@@ -40,8 +49,12 @@ The SVG format
 * A more readable [tutorial](http://tutorials.jenkov.com/svg/path-element.html)
 
 
-There are a couple links online that attempt to offer this functionality, but I wasn't able to get any of them to work well or at all
-* 
-* 
+There are a couple links online that attempt to offer this functionality, but I wasn't able to get them to work well or at all
+* "[Convert SVG Path Data to IOS graphics](http://yepher.com/svg2ios.html)". Doesn't work.  
+* The [Quarkee Lite](http://wavecoders.ca/productsDefault.cfm?prod=2) app, $4.99 in the [Mac App Store](https://itunes.apple.com/app/qwarkee/id498340809). Didn't work for me. 
+* [Paintcode](https://itunes.apple.com/us/app/paintcode/id507897570?mt=12), a graphics editor that outputs Quartz commands. $99. I haven't used it. 
+* A [blog post](http://rdsquared.wordpress.com/2012/01/10/svg-to-coregraphics-conversion/) from Ryan Dillon on the issue
+* Another [blog post](http://blog.mikeswanson.com/post/19874621055/smaller-apps-with-vector-images) discussing this. The author appears to have gotten great results but unfortunately didn't release any code. 
 
-The following library 
+The [SVGKit](https://github.com/SVGKit/SVGKit) library renders an SVG natively. Looks nice but was overkill for my use case. I also disagree with interpreting the file at run time, there's no reason no to *compile* the SVG into native drawing commands, rather than deal with XML parsing and validation in the draw cycle.  Here's another article on [using](http://t-machine.org/index.php/2012/12/31/svgkit-2013-usage/) SVGKit. 
+
