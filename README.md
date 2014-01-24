@@ -17,7 +17,7 @@ CGContextAddCurveToPoint(context, 0.00f, -5.64f, 2.73f, -10.33f, 7.28f, -14.32);
 CGContextClosePath(context);
 ```
 
-Right now there is no good, robust tool to convert the SVG output from a program like Inkscape or Adobe Illustrator 
+Right now there is no good, robust tool to convert the SVG output from a program like [Inkscape](http://inkscape.org/) or Adobe Illustrator 
 into Apple Quartz2D vector commands. 
 
 Such a tool should exist, because SVG is an extremely simple format and its commands map almost 1:1 to Quartz. 
@@ -56,5 +56,12 @@ There are a couple links online that attempt to offer this functionality, but I 
 * A [blog post](http://rdsquared.wordpress.com/2012/01/10/svg-to-coregraphics-conversion/) from Ryan Dillon on the issue
 * Another [blog post](http://blog.mikeswanson.com/post/19874621055/smaller-apps-with-vector-images) discussing this. The author appears to have gotten great results but unfortunately didn't release any code. 
 
-The [SVGKit](https://github.com/SVGKit/SVGKit) library renders an SVG natively. Looks nice but was overkill for my use case. I also disagree with interpreting the file at run time, there's no reason no to *compile* the SVG into native drawing commands, rather than deal with XML parsing and validation in the draw cycle.  Here's another article on [using](http://t-machine.org/index.php/2012/12/31/svgkit-2013-usage/) SVGKit. 
+The [SVGKit](https://github.com/SVGKit/SVGKit) library renders an SVG natively. Looks nice, and appears to suport 90% of the SVG standard, but was overkill for my use case. I also disagree with interpreting the file at run time, there's no reason no to *compile* the SVG into native drawing commands, rather than deal with XML parsing and validation in the draw cycle.  Here's another article on [using](http://t-machine.org/index.php/2012/12/31/svgkit-2013-usage/) SVGKit. 
+
+
+Where to go from here
+-----------------------
+
+Add support for more commands, multiple paths, colors.
+Make this an Inkscape plugin: "export directly to Quartz"?
 
