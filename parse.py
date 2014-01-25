@@ -321,7 +321,7 @@ bbox2 = get_bounding_box_for_commands(objc_commands)
 
 # Print the bounding box
 print ''
-print 'const CGRect pathRect = %s' % bbox2.get_objc()
+print 'const CGRect pathRect = %s;' % bbox2.get_objc()
 
 # Print the commands
 print ''
