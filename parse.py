@@ -339,22 +339,23 @@ class SvgStringParser(object):
         bbox2 = self.get_bounding_box_for_commands(objc_commands)
 
 
-        # Print the bounding box
-        print ''
-        print 'const CGRect pathRect = %s;' % bbox2
-        print ''
+        # Build the output
+        output = ''
+        # Add the bounding box
+        output += '\nconst CGRect pathRect = %s;\n' % bbox2
 
         if self.formatter.draw_to_path:
-            print 'CGAffineTransform %s = CGAffineTransformConcat(CGAffineTransformMakeScale(rect.size.width / pathRect.size.width,' % PATH_TRANSFORM_NAME
-            print '                                                                                     rect.size.height / pathRect.size.height),'
-            print '                                                          CGAffineTransformMakeTranslation(rect.origin.x - pathRect.origin.x,'
-            print '                                                                                           rect.origin.y - pathRect.origin.y));'
-            print ''
-            print 'CGMutablePathRef %s = CGPathCreateMutable();' % PATH_NAME
-            print ''
+            output += '''
+CGAffineTransform %s = CGAffineTransformConcat(CGAffineTransformMakeScale(rect.size.width / pathRect.size.width,
+                                                                                     rect.size.height / pathRect.size.height),
+                                                          CGAffineTransformMakeTranslation(rect.origin.x - pathRect.origin.x,
+                                                                                           rect.origin.y - pathRect.origin.y));
+
+CGMutablePathRef %s = CGPathCreateMutable();
+''' % (PATH_TRANSFORM_NAME, PATH_NAME)
 
         # Print the commands
         for command in objc_commands:
-            print command
-        print ''
+            output += str(command) + '\n'
 
+        return output
