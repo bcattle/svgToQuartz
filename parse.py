@@ -322,9 +322,18 @@ bbox2 = get_bounding_box_for_commands(objc_commands)
 # Print the bounding box
 print ''
 print 'const CGRect pathRect = %s;' % bbox2.get_objc()
+print ''
+
+if DRAW_TO_PATH:
+    print 'CGAffineTransform %s = CGAffineTransformConcat(CGAffineTransformMakeScale(rect.size.width / pathRect.size.width,' % pathref_transform_name
+    print '                                                                                     rect.size.height / pathRect.size.height),'
+    print '                                                          CGAffineTransformMakeTranslation(rect.origin.x - pathRect.origin.x,'
+    print '                                                                                           rect.origin.y - pathRect.origin.y));'
+    print ''
+    print 'CGMutablePathRef %s = CGPathCreateMutable();' % path_name
+    print ''
 
 # Print the commands
-print ''
 for command in objc_commands:
     print command
 print ''
