@@ -33,7 +33,9 @@ This script specifically parses the contents of the `<path d="">` attribute. Oth
 
 Commands that work so far:
 * `m`: move to point, relative coordinates
+* `M`: move to point, absolute coordinates
 * `c`: add cubic bezier curve, relative coordinates
+* `C`: add cubic bezier curve, absolute coordinates
 * `l`: add line, relative coordinates
 * `z`: close path
 
@@ -62,6 +64,6 @@ The [SVGKit](https://github.com/SVGKit/SVGKit) library renders an SVG natively. 
 Where to go from here
 -----------------------
 
-Add support for more commands, multiple paths, colors.
-Make this an Inkscape plugin: "export directly to Quartz"?
+* Add support for more commands, multiple paths, colors.
+* Make this an Inkscape plugin: "export directly to Quartz"?
 
