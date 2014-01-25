@@ -7,10 +7,9 @@
 # Paw
 svg_str = 'M 49.082979,-4.53 C 39.947541,-4.980515 29.925991,4.0260961 19.976242,0.0368 10.026493,-3.9524961 7.9875976,-15.361247 15.431139,-20.8672 c 7.443541,-5.505953 16.105385,-5.739956 20.00904,-12.3051 3.903655,-6.565144 6.36614,-8.519 9.45891,-9.6008 3.63458,-1.1309 6.36614,-1.2047 10.00825,-0.3074 5.45562,1.3584 7.27666,3.227 10.27921,8.9493 4.481031,11.470663 19.533584,9.441864 23.19202,18.7897 2.73165,8.187 -4.476171,16.4764082 -13.6428,16.8658 C 65.56914,1.9136918 58.218417,-4.079485 49.082979,-4.53 z m 25.28408,-37.9297 c 0,-5.6424 2.73156,-10.3382 7.27666,-14.3211 3.64208,-3.2515 6.37364,-4.5545 9.82762,-4.5545 1.82104,0 2.72406,-0.3073 2.72406,-2.6922 0,-1.4813 0.91052,-4.4253 0.91052,-6.5275 l 0,-3.8231 1.82104,1.6227 c 2.73156,2.2311 3.642171,8.6911 2.73156,13.2394 0,1.8378 -0.91052,5.3966 -1.82095,7.892 -1.82113,11.162 -11.188033,20.9287 -16.874011,19.3583 -5.685979,-1.5705 -6.596499,-4.7543 -6.596499,-10.194 z M 2.149545,-51.624 c 0,-2.5016 -0.91061,-6.0542 -1.82103897,-7.892 -0.91052,-5.2121 0,-13.3746 3.63449297,-14.186 0.91061,-0.3073 0.91061,0.4303 0.91061,3.7371 0,2.2435 0,5.1015 0,6.3554 0,1.9853 0.910519,2.2742 2.731559,2.2742 3.642077,0 6.366141,1.2846 9.82012,4.5545 5.463116,4.9725 9.097701,13.0673 7.276661,19.2629 -0.903025,4.4378 -6.366143,6.1034 -11.321354,3.3806 -4.95521,-2.7229 -9.959321,-10.0495 -11.23105,-17.4867 z m 52.027874,-8.0026 c -2.185426,-6.461285 0.91052,-20.7442 5.45562,-23.7929 1.82104,-1.3583 2.73156,-2.3664 4.55269,-8.396 1.81354,-7.4986 1.81354,-7.6031 3.63449,1.9484 0,3.5711 0.91061,4.9479 2.73165,6.38 4.54511,3.8231 6.36614,8.3469 6.36614,16.2512 0,8.6726 -3.64207,15.3968 -9.09779,17.2039 -5.932546,2.264682 -11.457374,-3.133315 -13.6428,-9.5946 z m -22.19122,-24.8193 c 1.81345,-1.8316 2.72406,-2.8704 3.63458,-8.0088 0,-3.2515 0.91052,-5.9067 1.82104,-5.9067 0,0 0.91052,2.5138 0.91052,5.5932 0.91052,5.1876 0.91052,5.7162 3.63458,7.4925 3.64208,2.3541 4.5526,4.3886 6.36614,9.1889 4.944668,13.959822 -7.418399,33.233595 -18.3723,21.8568 -3.89889,-4.2273 -7.092355,-22.1088 2.00544,-30.2159 z'
 
-absolute_origin_x = 0.0
-absolute_origin_y = 0.0
-currX = 0.0
-currY = 0.0
+# We have to keep track of our last point
+# to convert from relative coordinates
+currX = currY = 0.0
 
 # Are we outputting commands that draw to context
 # or are we creating a CGPathRef?
@@ -35,6 +34,16 @@ class Point(object):
     def __repr__(self):
         print '<Point x: %f, %f>' % (self.x, self.y)
 
+class Rect(object):
+    def __init__(self, x0, y0, dx, dy):
+        self.x0 = x0
+        self.y0 = y0
+        self.width = dx
+        self.height = dy
+
+    def get_objc(self):
+        return 'CGRectMake(%.2f, %.2f, %.2f, %.2f)' % (self.x0, self.y0, self.width, self.height)
+
 
 class Command(object):
     def __init__(self, command_str, x_points, y_points):
@@ -42,14 +51,21 @@ class Command(object):
         self.x_points = x_points
         self.y_points = y_points
 
-    def smallest_y(self):
-        if self.y_points:
-            return min(self.y_points)
-        else:
-            return 0.0
+    def get_geometry_point(self):
+        """ This is sort of a hack, returns the point that *isn't*
+        a control point. Is either the only point in the command, or the third point.
+        """
+        if self.x_points:
+            if len(self.x_points) == 3:
+                return self.x_points[2], self.y_points[2]
+            else:
+                return self.x_points[0], self.y_points[0]
+        return None, None
 
-    def add_y_offset(self, offset):
-        self.y_points = [y_val + offset for y_val in self.y_points]
+
+    def add_xy_offset(self, offsetX, offsetY):
+        self.y_points = [y_val + offsetY for y_val in self.y_points]
+        self.x_points = [x_val + offsetX for x_val in self.x_points]
 
     def __repr__(self):
         s = '%s(%s, ' % (self.command_str, contextref_name)
@@ -109,7 +125,6 @@ def get_objc_for_c(iterator, prev_value=None):
     # lowercase c means relative coordinates
     # syntax is: c <ctrl1 x> <ctrl1 y> <ctrl2 x> <ctrl2 y> <x> <y>
     global currX, currY
-
     prev_value = prev_value or iterator.next()
 
     # pull off three points
@@ -145,7 +160,6 @@ def get_objc_for_l(iterator, prev_value=None):
     # lowercase means relative coordinates
     # syntax is: l <x> <y>
     global currX, currY
-
     prev_value = prev_value or iterator.next()
 
     # pull off one point
@@ -185,7 +199,6 @@ def get_objc_for_m(iterator, prev_value=None):
     # lowercase means relative coordinates
     # syntax is: m <x> <y>
     global currX, currY
-
     prev_value = prev_value or iterator.next()
 
     # pull off one point
@@ -198,9 +211,9 @@ def get_objc_for_m(iterator, prev_value=None):
     currY = pt_y
 
     if DRAW_TO_PATH:
-        return PathCommand('CGPathMoveToPoint', [pt_x], [pt_y])
+        return PathCommand('\nCGPathMoveToPoint', [pt_x], [pt_y])
     else:
-        return Command('CGContextMoveToPoint', [pt_x], [pt_y])
+        return Command('\nCGContextMoveToPoint', [pt_x], [pt_y])
 
 
 def get_objc_for_z():
@@ -210,8 +223,7 @@ def get_objc_for_z():
         return Command('CGContextClosePath', [], [])
 
 
-# import ipdb
-# ipdb.set_trace()
+# MAIN LOOP
 
 objc_commands = []
 last_command = ''
@@ -240,26 +252,17 @@ while True:
             # lowercase means relative coordinates
             # syntax is: l <x> <y>
             last_command = substr
-            # objc_commands.append(get_objc_for_l(substrs, currX, currY))
             objc_commands.append(get_objc_for_l(substrs))
         elif substr == 'm':
+            # moveto command
+            # lowercase means relative coordinates
+            # syntax is: m <x> <y>
             last_command = substr
-            # If this is the first iteration, set the absolute origin
-            # moveto_str = None
-            # if first_iteration:
-            #     moveto_str = substrs.next()
-            #     abs_origin_pt = Point(moveto_str)
-            #     absolute_origin_x = abs_origin_pt.x
-            #     absolute_origin_y = abs_origin_pt.y
-            # objc_commands.append(get_objc_for_m(substrs, prev_value=moveto_str))
             objc_commands.append(get_objc_for_m(substrs))
         elif substr == 'M':
+            # moveto command
+            # absolute coordinates
             last_command = substr
-            # # Set currX and currY to the difference between this point
-            # # and the absolute origin
-            # abs_moveto_pt = Point(substrs.next())
-            # currX = abs_moveto_pt.x
-            # currY = abs_moveto_pt.y
             objc_commands.append(get_objc_for_M(substrs))
         elif substr == 'z':
             # closepath command
@@ -287,18 +290,42 @@ while True:
         print 'ERROR current substr: %s' % substr
         raise
 
-# Go through the commands and find the smallest y-value
-# add that as an offset to all points
-# smallest_y = 0
-# for command in objc_commands:
-#     curr_smallest = command.smallest_y()
-#     if curr_smallest < smallest_y:
-#         smallest_y = curr_smallest
-#
-# for command in objc_commands:
-#     command.add_y_offset(-smallest_y)
 
+def get_bounding_box_for_commands(commands):
+    geometry_x_points = []
+    geometry_y_points = []
+    for command in commands:
+        curr_cmd_X, curr_cmd_Y = command.get_geometry_point()
+        if curr_cmd_X is not None:
+            geometry_x_points.append(curr_cmd_X)
+            geometry_y_points.append(curr_cmd_Y)
+
+    minX = min(geometry_x_points)
+    maxX = max(geometry_x_points)
+    minY = min(geometry_y_points)
+    maxY = max(geometry_y_points)
+    return Rect(minX, minY, maxX - minX, maxY - minY)
+
+
+# Calculate the bounding box for the shape
+# excluding the control points
+bbox = get_bounding_box_for_commands(objc_commands)
+
+# Zero out the origin, subtract minX, minY from every point
+for command in objc_commands:
+    command.add_xy_offset(-bbox.x0, -bbox.y0)
+
+# Double check, calculate it again
+bbox2 = get_bounding_box_for_commands(objc_commands)
+
+
+# Print the bounding box
+print ''
+print 'const CGRect pathRect = %s' % bbox2.get_objc()
+
+# Print the commands
 print ''
 for command in objc_commands:
     print command
+print ''
 
