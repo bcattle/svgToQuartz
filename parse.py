@@ -149,6 +149,23 @@ class SvgFormatter(object):
                        y_points=[ctrl1_y, ctrl2_y, pt_y])
 
 
+    def get_objc_for_L(self, iterator, prev_value=None):
+        # lineto command
+        # absolute coordinates
+        # syntax is: l <x> <y>
+        prev_value = prev_value or iterator.next()
+
+        # pull off one point
+        pt = Point(prev_value)
+        self.currX = pt.x
+        self.currY = pt.y
+
+        if self.draw_to_path:
+            return PathCommand('CGPathAddLineToPoint', [pt.x], [pt.y])
+        else:
+            return Command('CGContextAddLineToPoint', [pt.x], [pt.y])
+
+
     def get_objc_for_l(self, iterator, prev_value=None):
         # lineto command
         # lowercase means relative coordinates
@@ -266,6 +283,12 @@ class SvgStringParser(object):
                     # syntax is: l <x> <y>
                     last_command = substr
                     objc_commands.append(self.formatter.get_objc_for_l(substrs))
+                elif substr == 'L':
+                    # lineto command
+                    # absolute coordinates
+                    # syntax is: l <x> <y>
+                    last_command = substr
+                    objc_commands.append(self.formatter.get_objc_for_L(substrs))
                 elif substr == 'm':
                     # moveto command
                     # lowercase means relative coordinates
@@ -290,6 +313,8 @@ class SvgStringParser(object):
                         objc_commands.append(self.formatter.get_objc_for_C(substrs, prev_value=substr))
                     elif last_command == 'l':
                         objc_commands.append(self.formatter.get_objc_for_l(substrs, prev_value=substr))
+                    elif last_command == 'L':
+                        objc_commands.append(self.formatter.get_objc_for_L(substrs, prev_value=substr))
                     elif last_command == 'm':
                         objc_commands.append(self.formatter.get_objc_for_m(substrs, prev_value=substr))
                     elif last_command == 'M':
