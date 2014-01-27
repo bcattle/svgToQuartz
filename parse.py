@@ -2,7 +2,7 @@
 
 CONTEXTREF_NAME = 'context'
 PATH_NAME = 'path'
-PATH_TRANSFORM_NAME = 'rectTransform'
+# PATH_TRANSFORM_NAME = 'rectTransform'
 
 
 class Point(object):
@@ -71,7 +71,8 @@ class PathCommand(Command):
 
     def __repr__(self):
         if self.transform:
-            s = '%s(%s, &%s, ' % (self.command_str, PATH_NAME, PATH_TRANSFORM_NAME)
+            # s = '%s(%s, &%s, ' % (self.command_str, PATH_NAME, PATH_TRANSFORM_NAME)
+            s = '%s(%s, NULL, ' % (self.command_str, PATH_NAME)
         else:
             s = '%s(%s, ' % (self.command_str, PATH_NAME)
         for point in zip(self.x_points, self.y_points):
@@ -198,9 +199,9 @@ class SvgFormatter(object):
         self.currY = pt.y
 
         if self.draw_to_path:
-            return PathCommand('CGPathMoveToPoint', [pt.x], [pt.y])
+            return PathCommand('\n\tCGPathMoveToPoint', [pt.x], [pt.y])
         else:
-            return Command('CGContextMoveToPoint', [pt.x], [pt.y])
+            return Command('\nCGContextMoveToPoint', [pt.x], [pt.y])
 
 
     def get_objc_for_m(self, iterator, prev_value=None):
@@ -219,7 +220,7 @@ class SvgFormatter(object):
         self.currY = pt_y
 
         if self.draw_to_path:
-            return PathCommand('\nCGPathMoveToPoint', [pt_x], [pt_y])
+            return PathCommand('\n\tCGPathMoveToPoint', [pt_x], [pt_y])
         else:
             return Command('\nCGContextMoveToPoint', [pt_x], [pt_y])
 
@@ -342,22 +343,30 @@ class SvgStringParser(object):
 
 
         # Build the output
-        output = ''
+        output = '-(CGPathRef)getPathInRect:(CGRect)rect {'
         # Add the bounding box
-        output += '\nconst CGRect pathRect = %s;\n' % bbox2
+        output += '\n\t// const CGRect pathRect = %s;\n' % bbox2
 
         if self.formatter.draw_to_path:
-            output += '''
-CGAffineTransform %s = CGAffineTransformConcat(CGAffineTransformMakeScale(rect.size.width / pathRect.size.width,
-                                                                                     rect.size.height / pathRect.size.height),
-                                                          CGAffineTransformMakeTranslation(rect.origin.x - pathRect.origin.x,
-                                                                                           rect.origin.y - pathRect.origin.y));
-
-CGMutablePathRef %s = CGPathCreateMutable();
-''' % (PATH_TRANSFORM_NAME, PATH_NAME)
+            output += '\tCGMutablePathRef %s = CGPathCreateMutable();\n' % PATH_NAME
 
         # Print the commands
         for command in objc_commands:
-            output += str(command) + '\n'
+            output += '\t%s\n' % str(command)
+
+        # Emit commands that scale the path to fit in the supplied rectangle
+        if self.formatter.draw_to_path:
+            output += '''
+\t// Scale the path to fit inside `rect`
+\tCGRect pathRect = CGPathGetPathBoundingBox(path);
+
+\tCGAffineTransform rectTransform = CGAffineTransformConcat(CGAffineTransformMakeScale(rect.size.width / pathRect.size.width,
+                                                                                         rect.size.height / pathRect.size.height),
+                                                              CGAffineTransformMakeTranslation(rect.origin.x - pathRect.origin.x,
+                                                                                               rect.origin.y - pathRect.origin.y));
+
+\treturn CGPathCreateCopyByTransformingPath(path, &rectTransform);
+}
+        '''
 
         return output
