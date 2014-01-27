@@ -316,9 +316,11 @@ class SvgStringParser(object):
                     elif last_command == 'L':
                         objc_commands.append(self.formatter.get_objc_for_L(substrs, prev_value=substr))
                     elif last_command == 'm':
-                        objc_commands.append(self.formatter.get_objc_for_m(substrs, prev_value=substr))
+                        # Consecutive move commands are lines
+                        objc_commands.append(self.formatter.get_objc_for_l(substrs, prev_value=substr))
                     elif last_command == 'M':
-                        objc_commands.append(self.formatter.get_objc_for_M(substrs, prev_value=substr))
+                        # Consecutive move commands are lines
+                        objc_commands.append(self.formatter.get_objc_for_L(substrs, prev_value=substr))
                     else:
                         print 'ERROR unknown command %s at position %d' % (substr, svg_str.find(substr))
             except StopIteration:
