@@ -6,17 +6,37 @@ PATH_NAME = 'path'
 
 
 class Point(object):
-    def __init__(self, s):
+    def __init__(self, s, s2=None):
         """
         :param s: Expects a string of the form  `1.97942,-0.6032`
+        or two separate strings "1.224124", "3.24141"
         """
-        x_str, y_str = s.split(',')
+        if s2:
+            x_str, y_str = s, s2
+        else:
+            x_str, y_str = s.split(',')
         self.x = float(x_str)
         # Coming form inkscape, we invert all y-values
         self.y = float(y_str)
 
     def __repr__(self):
         print '<Point x: %.2f, y: %.2f>' % (self.x, self.y)
+
+    @classmethod
+    def get_point_from_iterator(cls, iterator, prev_value=None):
+        """
+        Attempts to parse a point from the the iterator
+        points are either of the form "x,y" or "x y"
+        """
+        if prev_value:
+            s1 = prev_value
+        else:
+            s1 = iterator.next()
+        if ',' in s1:
+            return Point(s1)
+        else:
+            s2 = iterator.next()
+            return Point(s1, s2)
 
 class Rect(object):
     def __init__(self, x0, y0, dx, dy):
@@ -98,9 +118,9 @@ class SvgFormatter(object):
         prev_value = prev_value or iterator.next()
 
         # pull off three points
-        ctrl1 = Point(prev_value)
-        ctrl2 = Point(iterator.next())
-        pt = Point(iterator.next())
+        ctrl1 = Point.get_point_from_iterator(iterator, prev_value)
+        ctrl2 = Point.get_point_from_iterator(iterator)
+        pt = Point.get_point_from_iterator(iterator)
 
         # end point becomes currX, currY?
         self.currX = pt.x
@@ -123,9 +143,9 @@ class SvgFormatter(object):
         prev_value = prev_value or iterator.next()
 
         # pull off three points
-        ctrl1 = Point(prev_value)
-        ctrl2 = Point(iterator.next())
-        pt = Point(iterator.next())
+        ctrl1 = Point.get_point_from_iterator(iterator, prev_value)
+        ctrl2 = Point.get_point_from_iterator(iterator)
+        pt = Point.get_point_from_iterator(iterator)
 
         # convert relative to absolute
         # all points are relative to currX, currY
@@ -157,7 +177,7 @@ class SvgFormatter(object):
         prev_value = prev_value or iterator.next()
 
         # pull off one point
-        pt = Point(prev_value)
+        pt = Point.get_point_from_iterator(iterator, prev_value)
         self.currX = pt.x
         self.currY = pt.y
 
@@ -174,7 +194,7 @@ class SvgFormatter(object):
         prev_value = prev_value or iterator.next()
 
         # pull off one point
-        pt = Point(prev_value)
+        pt = Point.get_point_from_iterator(iterator, prev_value)
 
         # convert relative to absolute
         pt_x = pt.x + self.currX
@@ -193,7 +213,8 @@ class SvgFormatter(object):
         prev_value = prev_value or iterator.next()
 
         # pull off one point
-        pt = Point(prev_value)
+        pt = Point.get_point_from_iterator(iterator, prev_value)
+
         # currX, currY becomes this point
         self.currX = pt.x
         self.currY = pt.y
@@ -211,7 +232,7 @@ class SvgFormatter(object):
         prev_value = prev_value or iterator.next()
 
         # pull off one point
-        pt = Point(prev_value)
+        pt = Point.get_point_from_iterator(iterator, prev_value)
 
         # convert relative to absolute
         pt_x = pt.x + self.currX
@@ -258,7 +279,7 @@ class SvgStringParser(object):
         """
         objc_commands = []
         last_command = ''
-        substrs = iter(svg_str.split(' '))
+        substrs = iter(svg_str.strip().split(' '))
         substr = ''
 
         while True:
