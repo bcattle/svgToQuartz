@@ -364,7 +364,7 @@ class SvgStringParser(object):
 
 
         # Build the output
-        output = '-(CGPathRef)getPathInRect:(CGRect)rect {'
+        output = '+(CGPathRef)getPathInRect:(CGRect)rect {'
         # Add the bounding box
         output += '\n\t// const CGRect pathRect = %s;\n' % bbox2
 
